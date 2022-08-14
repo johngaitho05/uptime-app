@@ -5,12 +5,38 @@
 
 // Dependencies
 var http = require('http');
+var https = require('https')
 var url = require('url');
 var StringDecoder = require('string_decoder').StringDecoder
+var config  = require("./config")
+var fs = require('fs')
 
-// Configure the server to respond to all requests with a string
-var server = http.createServer(function(req,res){
+// Instantiate the  http server
+var httpServer = http.createServer(function(req,res){
+    unifiedServer(req, res)
+});
 
+// Start the http server
+httpServer.listen(config.httpPort,function(){
+    console.log("The server is up and running on port "+config.httpPort);
+});
+
+// Instantiate the  https server
+var httpsServerOptions =  {
+    'key':fs.readFileSync('./https/key.pem'),
+    'cert':fs.readFileSync('./https/cert.pem'),
+};
+var httpsServer = https.createServer(httpsServerOptions,function(req,res){
+    unifiedServer(req, res)
+});
+
+// Start the https server
+httpsServer.listen(config.httpsPort,function(){
+    console.log("The server is up and running on port "+config.httpsPort);
+});
+
+// All the server logic for bot http and https server
+var unifiedServer = function(req, res){
     // Parse the url
     var parsedUrl = url.parse(req.url, true);
 
@@ -37,7 +63,6 @@ var server = http.createServer(function(req,res){
         buffer += decoder.end();
 
         // chose the hander that the request should go to. If one does not exist then default to notFound handler
-        console.log("trimmedpath",trimmedPath)
         var chosenHandler = typeof(router[trimmedPath]) !== 'undefined' ? router[trimmedPath] : handlers.notFound
 
         //Construct the data object to send to the handler
@@ -66,13 +91,14 @@ var server = http.createServer(function(req,res){
 
         })
     })
-});
+}
 
 // Define handlers
 var handlers = {}
 
-handlers.sample = function(data,callback){
-    callback(406, {'name':"Sample handler"});
+// Ping handler
+handlers.ping = function(data,callback){
+    callback(200);
 }
 
 //Not found handler
@@ -82,11 +108,7 @@ handlers.notFound = function (data, callback){
 
 //Define a request router
 var router = {
-    "sample":handlers.sample
+    "ping":handlers.ping
 }
 
-
-// Start the server
-server.listen(3000,function(){
-    console.log('The server is up and running now');
-});
+// Running the app in production: NODE_ENV=production node index.js
