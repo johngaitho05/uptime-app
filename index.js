@@ -35,7 +35,7 @@ httpsServer.listen(config.httpsPort,function(){
     console.log("The server is up and running on port "+config.httpsPort);
 });
 
-// All the server logic for bot http and https server
+// All the server logic for both http and https server
 var unifiedServer = function(req, res){
     // Parse the url
     var parsedUrl = url.parse(req.url, true);
